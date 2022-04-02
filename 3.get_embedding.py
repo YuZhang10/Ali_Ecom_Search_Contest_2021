@@ -1,14 +1,16 @@
+from ast import arg
 import csv
 import sys
+import argparse
 
 import torch
 from tqdm import tqdm
 
 sys.path.append("..")
-from .simcse.models import BertForCL
+from simcse.models import BertForCL
 from transformers import AutoTokenizer
 
-device = "cuda:1"
+device = "cuda:0"
 tokenizer = AutoTokenizer.from_pretrained("hfl/chinese-roberta-wwm-ext")
 batch_size = 100
 use_pinyin = False
@@ -24,7 +26,11 @@ def encode_fun(texts, model):
 
 
 if __name__ == '__main__':
-    model = BertForCL.from_pretrained("./result/unsup-simcse/")
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--dir_path', type=str, default="./result/sup-simcse/")
+    args = parser.parse_args()
+    print(args)
+    model = BertForCL.from_pretrained(args.dir_path)
     model.to(device)
     corpus = [line[1] for line in csv.reader(open("./data/corpus.tsv"), delimiter='\t')]
     query = [line[1] for line in csv.reader(open("./data/dev.query.txt"), delimiter='\t')]
