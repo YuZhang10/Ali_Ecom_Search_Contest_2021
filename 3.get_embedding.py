@@ -2,6 +2,7 @@ from ast import arg
 import csv
 import sys
 import argparse
+import os
 
 import torch
 from tqdm import tqdm
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     corpus = [line[1] for line in csv.reader(open("./data/corpus.tsv"), delimiter='\t')]
     query = [line[1] for line in csv.reader(open("./data/dev.query.txt"), delimiter='\t')]
 
-    query_embedding_file = csv.writer(open('./query_embedding', 'w'), delimiter='\t')
+    query_embedding_file = csv.writer(open(os.path.join(args.dir_path,'query_embedding'), 'w'), delimiter='\t')
 
     for i in tqdm(range(0, len(query), batch_size)):
         batch_text = query[i:i + batch_size]
@@ -46,7 +47,7 @@ if __name__ == '__main__':
             writer_str = ','.join(writer_str)
             query_embedding_file.writerow([i + j + 200001, writer_str])
 
-    doc_embedding_file = csv.writer(open('./doc_embedding', 'w'), delimiter='\t')
+    doc_embedding_file = csv.writer(open(os.path.join(args.dir_path,'doc_embedding'), 'w'), delimiter='\t')
     for i in tqdm(range(0, len(corpus), batch_size)):
         batch_text = corpus[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)
