@@ -3,8 +3,10 @@
 # In this example, we show how to train SimCSE on unsupervised Wikipedia data.
 # If you want to train it with multiple GPU cards, see "run_sup_example.sh"
 # about how to use PyTorch's distributed data parallel.
-DIR_PATH="./result/0403;simcse-roberta-pretain;bs128;nomlp;cls"
+DIR_PATH="./result/0402;simcse-chinese-roberta;bs128;nomlp;cls"
+DRIVE_RESULT="/content/drive/MyDrive/competition/simcse-mini/result"
 
+# 训练模型
 python train.py \
     --model_name_or_path cyclone/simcse-chinese-roberta-wwm-ext \
     --train_file "./data/X_train.csv" \
@@ -26,10 +28,16 @@ python train.py \
     --temp 0.05 \
     --do_train \
     --do_eval
-cp ./run.sh $DIR_PATH
-
 echo "train finished!"
 
+# 提取embedding
 python 3.get_embedding.py --dir_path $DIR_PATH
 
+# 打包embedding，放入result文件夹
 bash 4.tar.sh
+mv foo.tar.gz $DIR_PATH/foo.tar.gz
+
+# 将文件移回云盘保存
+cp -r ./result/* $DRIVE_RESULT
+
+echo "Finished!"
