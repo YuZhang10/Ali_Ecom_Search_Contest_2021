@@ -8,11 +8,11 @@ import torch
 from tqdm import tqdm
 
 sys.path.append("..")
-from simcse.models import BertForCL
+from simcse.models import BertForCL, RobertaForCL
 from transformers import AutoTokenizer
 
 device = "cuda:0"
-batch_size = 100
+batch_size = 128
 use_pinyin = False
 
 if __name__ == '__main__':
@@ -21,14 +21,14 @@ if __name__ == '__main__':
     # parser.add_argument('--pretrain', type=str, default="hfl/chinese-roberta-wwm-ext")
     args = parser.parse_args()
     print(args)
-    model = BertForCL.from_pretrained(args.dir_path)
+    model = RobertaForCL.from_pretrained(args.dir_path)
     model.to(device)
     corpus = [line[1] for line in csv.reader(open("./data/corpus.tsv"), delimiter='\t')]
     query = [line[1] for line in csv.reader(open("./data/dev.query.txt"), delimiter='\t')]
     tokenizer = AutoTokenizer.from_pretrained(args.dir_path)
 
     def encode_fun(texts, model):
-        inputs = tokenizer.batch_encode_plus(texts, padding=True, truncation=True, return_tensors="pt", max_length=115)
+        inputs = tokenizer.batch_encode_plus(texts, padding=True, truncation=True, return_tensors="pt", max_length=64)
         inputs.to(device)
         with torch.no_grad():
             embeddings = model(**inputs, output_hidden_states=True, return_dict=True, sent_emb=True).pooler_output

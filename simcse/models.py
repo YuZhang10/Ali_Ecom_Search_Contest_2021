@@ -95,6 +95,7 @@ def cl_init(cls, config, pooler_dim=128):
     """
     Contrastive learning class init function.
     """
+    # 由于比赛要求，最终输出的维度必须是128维，所以设定pooler_dim=128
     cls.pooler_type = cls.model_args.pooler_type
     cls.pooler = Pooler(cls.model_args.pooler_type)
     if cls.model_args.pooler_type == "cls":
@@ -127,10 +128,13 @@ def cl_forward(cls,
 
     mlm_outputs = None
     # Flatten input for encoding
-    input_ids = input_ids.view((-1, input_ids.size(-1)))  # (bs * num_sent, len)
-    attention_mask = attention_mask.view((-1, attention_mask.size(-1)))  # (bs * num_sent len)
+    input_ids = input_ids.view(
+        (-1, input_ids.size(-1)))  # (bs * num_sent, len)
+    attention_mask = attention_mask.view(
+        (-1, attention_mask.size(-1)))  # (bs * num_sent len)
     if token_type_ids is not None:
-        token_type_ids = token_type_ids.view((-1, token_type_ids.size(-1)))  # (bs * num_sent, len)
+        token_type_ids = token_type_ids.view(
+            (-1, token_type_ids.size(-1)))  # (bs * num_sent, len)
 
     # Get raw embeddings
     outputs = encoder(
@@ -162,7 +166,8 @@ def cl_forward(cls,
 
     # Pooling
     pooler_output = cls.pooler(attention_mask, outputs)
-    pooler_output = pooler_output.view((batch_size, num_sent, pooler_output.size(-1)))  # (bs, num_sent, hidden)
+    pooler_output = pooler_output.view(
+        (batch_size, num_sent, pooler_output.size(-1)))  # (bs, num_sent, hidden)
 
     # If using "cls", we add an extra MLP layer
     # (same as BERT's original implementation) over the representation.
@@ -180,7 +185,8 @@ def cl_forward(cls,
     if dist.is_initialized() and cls.training:
         # Gather hard negative
         if num_sent == 3:
-            z3_list = [torch.zeros_like(z3) for _ in range(dist.get_world_size())]
+            z3_list = [torch.zeros_like(z3)
+                       for _ in range(dist.get_world_size())]
             dist.all_gather(tensor_list=z3_list, tensor=z3.contiguous())
             z3_list[dist.get_rank()] = z3
             z3 = torch.cat(z3_list, 0)
@@ -198,7 +204,7 @@ def cl_forward(cls,
         # Get full batch embeddings: (bs x N, hidden)
         z1 = torch.cat(z1_list, 0)
         z2 = torch.cat(z2_list, 0)
-    
+
     # 归一化后余弦相似度==欧式距离
     z1 = F.normalize(z1, p=2, dim=-1)
     z2 = F.normalize(z2, p=2, dim=-1)
@@ -218,7 +224,7 @@ def cl_forward(cls,
         z3_weight = cls.model_args.hard_negative_weight
         weights = torch.tensor(
             [[0.0] * (cos_sim.size(-1) - z1_z3_cos.size(-1)) + [0.0] * i + [z3_weight] + [0.0] * (
-                        z1_z3_cos.size(-1) - i - 1) for i in range(z1_z3_cos.size(-1))]
+                z1_z3_cos.size(-1) - i - 1) for i in range(z1_z3_cos.size(-1))]
         ).to(cls.device)
         cos_sim = cos_sim + weights
 
@@ -228,7 +234,8 @@ def cl_forward(cls,
     if mlm_outputs is not None and mlm_labels is not None:
         mlm_labels = mlm_labels.view(-1, mlm_labels.size(-1))
         prediction_scores = cls.lm_head(mlm_outputs.last_hidden_state)
-        masked_lm_loss = loss_fct(prediction_scores.view(-1, cls.config.vocab_size), mlm_labels.view(-1))
+        masked_lm_loss = loss_fct(
+            prediction_scores.view(-1, cls.config.vocab_size), mlm_labels.view(-1))
         loss = loss + cls.model_args.mlm_weight * masked_lm_loss
 
     if not return_dict:
@@ -242,9 +249,6 @@ def cl_forward(cls,
         z1=z1.detach(),
         z2=z2.detach()
     )
-
-
-
 
 
 @dataclass
@@ -307,7 +311,7 @@ def sentemb_forward(
     )
 
     pooler_output = cls.pooler(attention_mask, outputs)
-    if cls.pooler_type == "cls":
+    if cls.pooler_type == "cls" and not cls.model_args.mlp_only_train:
         pooler_output = cls.mlp(pooler_output)
         pooler_output = F.normalize(pooler_output, p=2, dim=-1)
     if not return_dict:
@@ -323,7 +327,6 @@ def sentemb_forward(
 class BertForCL(BertPreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
-    # 由于比赛要求，最终输出的维度必须是128维，所以设定pooler_dim=128
     def __init__(self, config, *model_args, **model_kargs):
         super().__init__(config)
         self.model_args = model_kargs["model_args"]
@@ -351,32 +354,32 @@ class BertForCL(BertPreTrainedModel):
                 ):
         if sent_emb:
             return sentemb_forward(self, self.bert,
-                                          input_ids=input_ids,
-                                          attention_mask=attention_mask,
-                                          token_type_ids=token_type_ids,
-                                          position_ids=position_ids,
-                                          head_mask=head_mask,
-                                          inputs_embeds=inputs_embeds,
-                                          labels=labels,
-                                          output_attentions=output_attentions,
-                                          output_hidden_states=output_hidden_states,
-                                          return_dict=return_dict,
-                                          )
+                                   input_ids=input_ids,
+                                   attention_mask=attention_mask,
+                                   token_type_ids=token_type_ids,
+                                   position_ids=position_ids,
+                                   head_mask=head_mask,
+                                   inputs_embeds=inputs_embeds,
+                                   labels=labels,
+                                   output_attentions=output_attentions,
+                                   output_hidden_states=output_hidden_states,
+                                   return_dict=return_dict,
+                                   )
         else:
             return cl_forward(self, self.bert,
-                                     input_ids=input_ids,
-                                     attention_mask=attention_mask,
-                                     token_type_ids=token_type_ids,
-                                     position_ids=position_ids,
-                                     head_mask=head_mask,
-                                     inputs_embeds=inputs_embeds,
-                                     labels=labels,
-                                     output_attentions=output_attentions,
-                                     output_hidden_states=output_hidden_states,
-                                     return_dict=return_dict,
-                                     mlm_input_ids=mlm_input_ids,
-                                     mlm_labels=mlm_labels,
-                                     )
+                              input_ids=input_ids,
+                              attention_mask=attention_mask,
+                              token_type_ids=token_type_ids,
+                              position_ids=position_ids,
+                              head_mask=head_mask,
+                              inputs_embeds=inputs_embeds,
+                              labels=labels,
+                              output_attentions=output_attentions,
+                              output_hidden_states=output_hidden_states,
+                              return_dict=return_dict,
+                              mlm_input_ids=mlm_input_ids,
+                              mlm_labels=mlm_labels,
+                              )
 
 
 class RobertaForCL(RobertaPreTrainedModel):
@@ -437,6 +440,8 @@ class RobertaForCL(RobertaPreTrainedModel):
                               )
 
 # 对抗学习。默认不启用。
+
+
 class FGM:
     def __init__(self, model):
         self.model = model
