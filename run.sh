@@ -3,15 +3,17 @@
 # In this example, we show how to train SimCSE on unsupervised Wikipedia data.
 # If you want to train it with multiple GPU cards, see "run_sup_example.sh"
 # about how to use PyTorch's distributed data parallel.
-pretrain="simcse-chinese-roberta"
+pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
 date='0403'
 epoch=4
 bs=128
 pooler="cls"
 max_seq_length=64
 
-dir_path="./result/${date};${pretrain};ep${epoch};bs${bs};${pooler};max_seq_length${max_seq_length};"
+dir_path="./result/${date};ep${epoch};bs${bs};${pooler};max_seq_length${max_seq_length};"
 drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
+# 保留原始脚本
+cp ./run.sh $dir_path
 # 训练模型
 python 2.train.py \
     --model_name_or_path $pretrain \
