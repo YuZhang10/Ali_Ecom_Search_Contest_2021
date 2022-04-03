@@ -25,9 +25,9 @@ class MLPLayer(nn.Module):
     Head for getting sentence representations over RoBERTa/BERT's CLS representation.
     """
 
-    def __init__(self, config, pooler_num):
+    def __init__(self, config, pooler_dim):
         super().__init__()
-        self.dense = nn.Linear(config.hidden_size, pooler_num)
+        self.dense = nn.Linear(config.hidden_size, pooler_dim)
         self.activation = nn.Tanh()
 
     def forward(self, features, **kwargs):
@@ -91,14 +91,15 @@ class Pooler(nn.Module):
             raise NotImplementedError
 
 
-def cl_init(cls, config, pooler_type, temp, pooler_num):
+def cl_init(cls, config, pooler_dim=128):
     """
     Contrastive learning class init function.
     """
-    cls.pooler_type = pooler_type
-    cls.pooler = Pooler('avg')
-    cls.mlp = MLPLayer(config, pooler_num=pooler_num)
-    cls.sim = Similarity(temp=temp)
+    cls.pooler_type = cls.model_args.pooler_type
+    cls.pooler = Pooler(cls.model_args.pooler_type)
+    if cls.model_args.pooler_type == "cls":
+        cls.mlp = MLPLayer(config, pooler_dim)
+    cls.sim = Similarity(temp=cls.model_args.temp)
     cls.init_weights()
 
 
@@ -165,7 +166,8 @@ def cl_forward(cls,
 
     # If using "cls", we add an extra MLP layer
     # (same as BERT's original implementation) over the representation.
-    pooler_output = cls.mlp(pooler_output)
+    if cls.pooler_type == "cls":
+        pooler_output = cls.mlp(pooler_output)
 
     # Separate representation
     z1, z2 = pooler_output[:, 0], pooler_output[:, 1]
@@ -173,8 +175,6 @@ def cl_forward(cls,
     # Hard negative
     if num_sent == 3:
         z3 = pooler_output[:, 2]
-
-
 
     # Gather all embeddings if using distributed training
     if dist.is_initialized() and cls.training:
@@ -198,7 +198,8 @@ def cl_forward(cls,
         # Get full batch embeddings: (bs x N, hidden)
         z1 = torch.cat(z1_list, 0)
         z2 = torch.cat(z2_list, 0)
-
+    
+    # 归一化后余弦相似度==欧式距离
     z1 = F.normalize(z1, p=2, dim=-1)
     z2 = F.normalize(z2, p=2, dim=-1)
 
@@ -228,7 +229,7 @@ def cl_forward(cls,
         mlm_labels = mlm_labels.view(-1, mlm_labels.size(-1))
         prediction_scores = cls.lm_head(mlm_outputs.last_hidden_state)
         masked_lm_loss = loss_fct(prediction_scores.view(-1, cls.config.vocab_size), mlm_labels.view(-1))
-        loss = loss + cls.mlm_weight * masked_lm_loss
+        loss = loss + cls.model_args.mlm_weight * masked_lm_loss
 
     if not return_dict:
         output = (cos_sim,) + outputs[2:]
@@ -322,16 +323,16 @@ def sentemb_forward(
 class BertForCL(BertPreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
-    def __init__(self, config, pooler_type='cls', temp=0.05, pooler_num=128, do_mlm=False, mlm_weight=None):
+    # 由于比赛要求，最终输出的维度必须是128维，所以设定pooler_dim=128
+    def __init__(self, config, *model_args, **model_kargs):
         super().__init__(config)
-        # self.model_args = model_kargs["model_args"]
+        self.model_args = model_kargs["model_args"]
         self.bert = BertModel(config, add_pooling_layer=False)
-        self.sent_emb = False
-        if do_mlm:
-            self.lm_head = BertLMPredictionHead(config)
-            self.mlm_weight = mlm_weight
 
-        cl_init(self, config, pooler_type, temp, pooler_num)
+        if self.model_args.do_mlm:
+            self.lm_head = BertLMPredictionHead(config)
+
+        cl_init(self, config)
 
     def forward(self,
                 input_ids=None,
@@ -348,7 +349,7 @@ class BertForCL(BertPreTrainedModel):
                 mlm_input_ids=None,
                 mlm_labels=None,
                 ):
-        if self.sent_emb or sent_emb:
+        if sent_emb:
             return sentemb_forward(self, self.bert,
                                           input_ids=input_ids,
                                           attention_mask=attention_mask,
@@ -435,7 +436,7 @@ class RobertaForCL(RobertaPreTrainedModel):
                               mlm_labels=mlm_labels,
                               )
 
-
+# 对抗学习。默认不启用。
 class FGM:
     def __init__(self, model):
         self.model = model

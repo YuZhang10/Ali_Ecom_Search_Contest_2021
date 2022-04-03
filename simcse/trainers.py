@@ -176,8 +176,6 @@ class CLTrainer(Trainer):
         else:
             loss.backward()
 
-
-
         if self.do_fgm:
             name = 'word_embeddings.weight'
             self.fgm.attack(emb_name=name)
@@ -220,8 +218,6 @@ class CLTrainer(Trainer):
             ignore_keys=ignore_keys,
             metric_key_prefix=metric_key_prefix,
         )
-        # print(output.metrics)
-        # print(self.args.eval_batch_size)
         total_batch_size = self.args.eval_batch_size * self.args.world_size
         output.metrics.update(
             speed_metrics(
@@ -234,15 +230,9 @@ class CLTrainer(Trainer):
 
         self.log(output.metrics)
 
-        # if DebugOption.TPU_METRICS_DEBUG in self.args.debug:
-            # tpu-comment: Logging debug metrics for PyTorch/XLA (compile, execute times, ops, etc.)
-        #    xm.master_print(met.metrics_report())
-
         self.control = self.callback_handler.on_evaluate(self.args, self.state, self.control, output.metrics)
 
         self._memory_tracker.stop_and_update_metrics(output.metrics)
-
-
 
         return output.metrics
 
@@ -286,13 +276,13 @@ class CLTrainer(Trainer):
             model = model.half().to(self.args.device)
 
         batch_size = dataloader.batch_size
-        if self.args.local_rank==0:
-            logger.info(f"***** Running {description} *****")
-            if isinstance(dataloader.dataset, collections.abc.Sized):
-                logger.info(f"  Num examples = {self.num_examples(dataloader)}")
-            else:
-                logger.info("  Num examples: Unknown")
-            logger.info(f"  Batch size = {batch_size}")
+
+        logger.info(f"***** Running {description} *****")
+        if isinstance(dataloader.dataset, collections.abc.Sized):
+            logger.info(f"  Num examples = {self.num_examples(dataloader)}")
+        else:
+            logger.info("  Num examples: Unknown")
+        logger.info(f"  Batch size = {batch_size}")
 
         model.eval()
 
@@ -322,7 +312,6 @@ class CLTrainer(Trainer):
         all_z1 = []
         all_z2 = []
         for step, inputs in enumerate(dataloader):
-            # print("hello")
             # Update the observed num examples
             observed_batch_size = find_batch_size(inputs)
             if observed_batch_size is not None:
@@ -333,12 +322,10 @@ class CLTrainer(Trainer):
 
             # Prediction step
             loss, logits, labels = self.prediction_step(model, inputs, prediction_loss_only=False, ignore_keys=ignore_keys)
-            # print("hello:",logits)
             all_z1.append(logits.z1.cpu())
             all_z2.append(logits.z2.cpu())
 
             # Update containers on host
-
             self.control = self.callback_handler.on_prediction_step(self.args, self.state, self.control)
 
             # Gather all tensors and put them back on the CPU if we have done enough accumulation steps.
@@ -372,13 +359,11 @@ class CLTrainer(Trainer):
         else:
             num_samples = observed_num_examples
 
-        # print(all_z1,all_z2)
         # Metrics!
         metrics = self.compute_eval_metrics(model=model,query=all_z1, doc=all_z2)
 
         # To be JSON-serializable, we need to remove numpy types or zero-d tensors
         metrics = denumpify_detensorize(metrics)
-
 
         # Prefix all keys with metric_key_prefix + '_'
         for key in list(metrics.keys()):
@@ -388,10 +373,8 @@ class CLTrainer(Trainer):
         return EvalLoopOutput(predictions=all_preds, label_ids=all_labels, metrics=metrics, num_samples=num_samples)
 
     def compute_eval_metrics(self,model,query,doc):
-        # print(query)
         query = torch.cat(query,axis=0)
         doc = torch.cat(doc,axis=0)
-        # print(query.size())
         cos_sim = model.sim(query.unsqueeze(1), doc.unsqueeze(0))
         labels = torch.arange(cos_sim.size(0)).long()
         loss_fct = nn.CrossEntropyLoss()
@@ -399,9 +382,8 @@ class CLTrainer(Trainer):
         labels = labels.cpu().numpy()
         preds = torch.argmax(cos_sim,dim=-1).long().cpu().numpy()
         result = accuracy_score(labels,preds)
-        result = {'acc':result,'eval_loss':loss}
+        result = {'eval_acc':result,'eval_loss':loss}
         return result
-
 
     def prediction_step(
         self,
@@ -505,7 +487,7 @@ class CLTrainer(Trainer):
 
         return (loss, logits, labels)
 
-'''
+
     def _save_checkpoint(self, model, trial, metrics=None):
         """
         Compared to original implementation, we change the saving policy to
@@ -663,4 +645,3 @@ class CLTrainer(Trainer):
             # Maybe delete some older checkpoints.
             if self.is_world_process_zero():
                 self._rotate_checkpoints(use_mtime=True)
-'''

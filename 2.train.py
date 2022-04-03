@@ -390,20 +390,33 @@ def main():
             "You can do it from another script, save it, and load it from here, using --tokenizer_name."
         )
 
+    # 这里就是在load不同模型，根据模型结构选用不同的类进行初始化
     if model_args.model_name_or_path:
-        model = BertForCL.from_pretrained(
-            model_args.model_name_or_path,
-            from_tf=bool(".ckpt" in model_args.model_name_or_path),
-            config=config,
-            cache_dir=model_args.cache_dir,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-            pooler_type=model_args.pooler_type,
-            temp=model_args.temp,
-            pooler_num=128,
-            do_mlm=model_args.do_mlm,
-            mlm_weight=model_args.mlm_weight
-        )
+        if 'roberta' in model_args.model_name_or_path:
+            model = RobertaForCL.from_pretrained(
+                model_args.model_name_or_path,
+                from_tf=bool(".ckpt" in model_args.model_name_or_path),
+                config=config,
+                cache_dir=model_args.cache_dir,
+                revision=model_args.model_revision,
+                use_auth_token=True if model_args.use_auth_token else None,
+                model_args=model_args                  
+            )
+        elif 'bert' in model_args.model_name_or_path:
+            model = BertForCL.from_pretrained(
+                model_args.model_name_or_path,
+                from_tf=bool(".ckpt" in model_args.model_name_or_path),
+                config=config,
+                cache_dir=model_args.cache_dir,
+                revision=model_args.model_revision,
+                use_auth_token=True if model_args.use_auth_token else None,
+                model_args=model_args
+            )
+            if model_args.do_mlm:
+                pretrained_model = BertForPreTraining.from_pretrained(model_args.model_name_or_path)
+                model.lm_head.load_state_dict(pretrained_model.cls.predictions.state_dict())
+        else:
+            raise NotImplementedError
     else:
         raise NotImplementedError
         logger.info("Training new model from scratch")
@@ -508,7 +521,6 @@ def main():
             remove_columns=column_names,
             load_from_cache_file=not data_args.overwrite_cache,
         )
-
     if training_args.do_eval:
         if "validation" not in datasets:
             raise ValueError("--do_eval requires a validation dataset")
@@ -607,15 +619,6 @@ def main():
             return inputs, labels
 
     data_collator = default_data_collator if data_args.pad_to_max_length else OurDataCollatorWithPadding(tokenizer)
-    '''
-    def compute_metrics(eval_preds):
-        preds, labels = eval_preds
-
-        if isinstance(preds, tuple):
-            preds = preds[0]
-
-        return result
-    '''
 
     trainer = CLTrainer(
         model=model,
@@ -624,7 +627,6 @@ def main():
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        do_fgm=training_args.do_fgm
     )
     trainer.model_args = model_args
 
@@ -635,12 +637,7 @@ def main():
             if (model_args.model_name_or_path is not None and os.path.isdir(model_args.model_name_or_path))
             else None
         )
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        print(checkpoint)
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        # train_result = trainer.train()# model_path=model_path)
+        train_result = trainer.train(model_path=model_path)
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
         output_train_file = os.path.join(training_args.output_dir, "train_results.txt")
@@ -653,24 +650,6 @@ def main():
 
             # Need to save the state, since Trainer.save_model saves only the tokenizer with the model
             trainer.state.save_to_json(os.path.join(training_args.output_dir, "trainer_state.json"))
-
-    # Evaluation
-    results = {}
-    '''
-    if training_args.do_eval:
-        logger.info("*** Evaluate ***")
-        results = trainer.evaluate(eval_senteval_transfer=True)
-
-        output_eval_file = os.path.join(training_args.output_dir, "eval_results.txt")
-        if trainer.is_world_process_zero():
-            with open(output_eval_file, "w") as writer:
-                logger.info("***** Eval results *****")
-                for key, value in sorted(results.items()):
-                    logger.info(f"  {key} = {value}")
-                    writer.write(f"{key} = {value}\n")
-    '''
-    return results
-
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)

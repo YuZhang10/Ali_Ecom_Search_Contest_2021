@@ -33,6 +33,8 @@ run_sup_example.sh 训练脚本
 bs=32爆内存
 bs=16跑通，0.232分数，排名120
 
+0403提交：1.改用RobertaForCL 2.存储best Checkpoint 3.打开了pooler开关 4.写死128到mlp部分
+
 ## References
 <a id="1">[1]</a> 
 SimCSE: Simple Contrastive Learning of Sentence Embeddings

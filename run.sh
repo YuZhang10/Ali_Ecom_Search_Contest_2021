@@ -25,8 +25,10 @@ python 2.train.py \
     --per_device_eval_batch_size $bs \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
-    --save_total_limit 3 \
+    --save_total_limit 2 \
     --evaluation_strategy steps \
+    --greater_is_better False \
+    --metric_for_best_model eval_loss \
     --load_best_model_at_end \
     --eval_steps 100 \
     --save_steps 100 \
