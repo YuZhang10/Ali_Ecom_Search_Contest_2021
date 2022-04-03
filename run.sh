@@ -18,7 +18,7 @@ python 2.train.py \
     --train_file "./data/X_train.csv" \
     --validation_file "./data/X_val.csv" \
     --output_dir $dir_path \
-    --num_train_epochs $ep \
+    --num_train_epochs $epoch \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
     --learning_rate 3e-5 \
