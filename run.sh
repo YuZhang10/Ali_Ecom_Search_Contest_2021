@@ -40,7 +40,7 @@ python 2.train.py \
     --temp 0.05 \
     --do_train \
     --do_eval \
-&& echo "train finished!" || echo 'train failed'; exit 1;
+&& { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本
 cp ./run.sh $dir_path/run_backup.sh
@@ -51,7 +51,7 @@ python 3.get_embedding.py \
         --pooler_type $pooler \
         --temp 0.05
         --batchsize 500 \
-&& echo "get embedding finished!" || echo "get embedding failed"; exit 1;
+&& { echo "get embedding finished!"; } || { echo "get embedding failed"; exit 1; }
 
 # 检查embedding文件
 python data_check.py
