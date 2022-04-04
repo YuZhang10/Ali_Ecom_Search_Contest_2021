@@ -3,6 +3,8 @@ import csv
 import sys
 import argparse
 import os
+from tkinter.font import BOLD
+from numpy import bool_
 
 import torch
 from tqdm import tqdm
@@ -10,7 +12,7 @@ from tqdm import tqdm
 sys.path.append("..")
 from simcse.models import BertForCL, RobertaForCL
 from transformers import AutoTokenizer
-
+from collections import namedtuple
 device = "cuda:0"
 batch_size = 128
 use_pinyin = False
@@ -18,10 +20,19 @@ use_pinyin = False
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--dir_path', type=str, default="./result/sup-simcse/")
-    # parser.add_argument('--pretrain', type=str, default="hfl/chinese-roberta-wwm-ext")
+    parser.add_argument('--do_mlm', type=bool, default=False)
+    parser.add_argument('--pooler_type', type=str, default="cls")
+    parser.add_argument('--temp', type=float, default=0.05)
+    parser.add_argument('--mlp_only_train', type=bool, default=False)
     args = parser.parse_args()
     print(args)
-    model = RobertaForCL.from_pretrained(args.dir_path)
+    model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train"])
+    dummy_args = model_args(args.do_mlm,
+                            args.pooler_type, 
+                            args.temp,
+                            args.mlp_only_train)
+    model = BertForCL.from_pretrained(args.dir_path,
+                                      model_args=dummy_args)
     model.to(device)
     corpus = [line[1] for line in csv.reader(open("./data/corpus.tsv"), delimiter='\t')]
     query = [line[1] for line in csv.reader(open("./data/dev.query.txt"), delimiter='\t')]
@@ -56,3 +67,5 @@ if __name__ == '__main__':
             writer_str = [format(s, '.8f') for s in writer_str]
             writer_str = ','.join(writer_str)
             doc_embedding_file.writerow([i + j + 1, writer_str])
+
+    
