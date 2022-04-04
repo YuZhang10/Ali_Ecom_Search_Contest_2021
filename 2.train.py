@@ -391,36 +391,18 @@ def main():
         )
 
     # 这里就是在load不同模型，根据模型结构选用不同的类进行初始化
-    if model_args.model_name_or_path:
-        if 'roberta' in model_args.model_name_or_path:
-            model = RobertaForCL.from_pretrained(
-                model_args.model_name_or_path,
-                from_tf=bool(".ckpt" in model_args.model_name_or_path),
-                config=config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                model_args=model_args                  
-            )
-        elif 'bert' in model_args.model_name_or_path:
-            model = BertForCL.from_pretrained(
-                model_args.model_name_or_path,
-                from_tf=bool(".ckpt" in model_args.model_name_or_path),
-                config=config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                model_args=model_args
-            )
-            if model_args.do_mlm:
-                pretrained_model = BertForPreTraining.from_pretrained(model_args.model_name_or_path)
-                model.lm_head.load_state_dict(pretrained_model.cls.predictions.state_dict())
-        else:
-            raise NotImplementedError
-    else:
-        raise NotImplementedError
-        logger.info("Training new model from scratch")
-        model = AutoModelForMaskedLM.from_config(config)
+    model = BertForCL.from_pretrained(
+        model_args.model_name_or_path,
+        from_tf=bool(".ckpt" in model_args.model_name_or_path),
+        config=config,
+        cache_dir=model_args.cache_dir,
+        revision=model_args.model_revision,
+        use_auth_token=True if model_args.use_auth_token else None,
+        model_args=model_args
+    )
+    if model_args.do_mlm:
+        pretrained_model = BertForPreTraining.from_pretrained(model_args.model_name_or_path)
+        model.lm_head.load_state_dict(pretrained_model.cls.predictions.state_dict())
 
     model.resize_token_embeddings(len(tokenizer))
 

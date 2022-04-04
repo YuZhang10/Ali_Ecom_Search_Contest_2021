@@ -31,6 +31,7 @@ if __name__ == '__main__':
                             args.pooler_type, 
                             args.temp,
                             args.mlp_only_train)
+    print(dummy_args)
     model = BertForCL.from_pretrained(args.dir_path,
                                       model_args=dummy_args)
     model.to(device)

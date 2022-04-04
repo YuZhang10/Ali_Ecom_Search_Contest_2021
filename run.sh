@@ -45,7 +45,7 @@ cp ./run.sh $dir_path/run_backup.sh
 # 提取embedding
 python 3.get_embedding.py \
         --dir_path $dir_path \
-        --pooler_type $pooler 
+        --pooler_type $pooler \
         --temp 0.05
 
 # 打包embedding，放入result文件夹
