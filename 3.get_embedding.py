@@ -24,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--pooler_type', type=str, default="cls")
     parser.add_argument('--temp', type=float, default=0.05)
     parser.add_argument('--mlp_only_train', action='store_true', default=False)
+    parser.add_argument('--batchsize', type=int, default=128)
     args = parser.parse_args()
     print(args)
     model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train"])
@@ -48,7 +49,7 @@ if __name__ == '__main__':
         return embeddings
 
     print("Processing query embedding...")
-    query_embedding_file = csv.writer(open(os.path.join(args.dir_path,'query_embedding'), 'w'), delimiter='\t')
+    query_embedding_file = csv.writer(open('query_embedding', 'w'), delimiter='\t')
     for i in tqdm(range(0, len(query), batch_size)):
         batch_text = query[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)
@@ -59,7 +60,7 @@ if __name__ == '__main__':
             query_embedding_file.writerow([i + j + 200001, writer_str])
 
     print("Processing doc embedding...")
-    doc_embedding_file = csv.writer(open(os.path.join(args.dir_path,'doc_embedding'), 'w'), delimiter='\t')
+    doc_embedding_file = csv.writer(open('doc_embedding', 'w'), delimiter='\t')
     for i in tqdm(range(0, len(corpus), batch_size)):
         batch_text = corpus[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)

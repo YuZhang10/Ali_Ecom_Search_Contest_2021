@@ -4,7 +4,7 @@
 # If you want to train it with multiple GPU cards, see "run_sup_example.sh"
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
-date='0403'
+date='0404'
 epoch=4
 bs=64
 pooler="cls"
@@ -12,6 +12,9 @@ max_seq_length=64
 
 dir_path="./result/${date};ep${epoch};bs${bs};${pooler};max_seq_length${max_seq_length};"
 drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
+
+# 删除当前的文件夹
+rm -rf $dir_path
 
 # 训练模型
 python 2.train.py \
@@ -36,8 +39,8 @@ python 2.train.py \
     --overwrite_output_dir \
     --temp 0.05 \
     --do_train \
-    --do_eval
-echo "train finished!"
+    --do_eval \
+&& echo "train finished!" || echo 'train failed'; exit 1;
 
 # 保留原始脚本
 cp ./run.sh $dir_path/run_backup.sh
@@ -47,11 +50,14 @@ python 3.get_embedding.py \
         --dir_path $dir_path \
         --pooler_type $pooler \
         --temp 0.05
+        --batchsize 500 \
+&& echo "get embedding finished!" || echo "get embedding failed"; exit 1;
 
-# 打包embedding，放入result文件夹
-tar zcvf $dir_path/foo.tar.gz  \
-$dir_path/query_embedding \
-$dir_path/doc_embedding
+# 检查embedding文件
+python data_check.py
+
+# 打包embedding。放入result文件夹
+tar zcvf foo.tar.gz query_embedding doc_embedding && mv foo.tar.gz $dir_path/foo.tar.gz
 
 # 将文件移回云盘保存
 cp -r ./result/* $drive_result
