@@ -14,7 +14,6 @@ from simcse.models import BertForCL, RobertaForCL
 from transformers import AutoTokenizer
 from collections import namedtuple
 device = "cuda:0"
-batch_size = 128
 use_pinyin = False
 
 if __name__ == '__main__':
@@ -50,6 +49,7 @@ if __name__ == '__main__':
 
     print("Processing query embedding...")
     query_embedding_file = csv.writer(open('query_embedding', 'w'), delimiter='\t')
+    batch_size = args.batchsize
     for i in tqdm(range(0, len(query), batch_size)):
         batch_text = query[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)
