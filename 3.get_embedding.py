@@ -20,10 +20,10 @@ use_pinyin = False
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--dir_path', type=str, default="./result/sup-simcse/")
-    parser.add_argument('--do_mlm', type=bool, default=False)
+    parser.add_argument('--do_mlm', action='store_true', default=False)
     parser.add_argument('--pooler_type', type=str, default="cls")
     parser.add_argument('--temp', type=float, default=0.05)
-    parser.add_argument('--mlp_only_train', type=bool, default=False)
+    parser.add_argument('--mlp_only_train', action='store_true', default=False)
     args = parser.parse_args()
     print(args)
     model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train"])
