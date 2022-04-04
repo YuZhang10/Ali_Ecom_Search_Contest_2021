@@ -49,8 +49,8 @@ cp ./run.sh $dir_path/run_backup.sh
 python 3.get_embedding.py \
         --dir_path $dir_path \
         --pooler_type $pooler \
-        --temp 0.05
-        --batchsize 500 \
+        --temp 0.05 \
+        --batchsize 1024 \
 && { echo "get embedding finished!"; } || { echo "get embedding failed"; exit 1; }
 
 # 检查embedding文件
