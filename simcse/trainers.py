@@ -278,6 +278,7 @@ class CLTrainer(Trainer):
         batch_size = dataloader.batch_size
         logger.info(f"")
         logger.info(f"***** Running {description} *****")
+        logger.info(f"  Global step = {self.state.global_step}")
         if isinstance(dataloader.dataset, collections.abc.Sized):
             logger.info(f"  Num examples = {self.num_examples(dataloader)}")
         else:
@@ -361,6 +362,11 @@ class CLTrainer(Trainer):
 
         # Metrics!
         metrics = self.compute_eval_metrics(model=model,query=all_z1, doc=all_z2)
+        logger.info(f"")
+        logger.info(f"***** {description} result*****")
+        logger.info(f" eval AUC = {metrics['eval_auc']}")
+        logger.info(f" eval loss = {metrics['eval_loss']}")
+        logger.info(f" eval MRR = {metrics['eval_MRR']}")
 
         # To be JSON-serializable, we need to remove numpy types or zero-d tensors
         metrics = denumpify_detensorize(metrics)
@@ -379,10 +385,19 @@ class CLTrainer(Trainer):
         labels = torch.arange(cos_sim.size(0)).long()
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(cos_sim, labels)
+        
         labels = labels.cpu().numpy()
+
+        # 计算MMR
+        sim_sorted_ranks = cos_sim.detach().argsort(descending=True).argsort() #
+        label_ranks = sim_sorted_ranks.diag().numpy() # 取label对应的排名，就是对角线上
+        MRR = 1/(label_ranks+1)
+        MRR = np.where(MRR<0.1,0,MRR) # 排名超过10的进行截断
+        MRR_mean = np.mean(MRR)
+
         preds = torch.argmax(cos_sim,dim=-1).long().cpu().numpy()
         result = accuracy_score(labels,preds)
-        result = {'eval_acc':result,'eval_loss':loss}
+        result = {'eval_acc':result,'eval_loss':loss, 'eval_MRR':MRR_mean}
         return result
 
     def prediction_step(
@@ -482,9 +497,6 @@ class CLTrainer(Trainer):
         if prediction_loss_only:
             return (loss, None, None)
 
-        # logits = nested_detach(logits)
-        # print(logits)
-
         return (loss, logits, labels)
 
 
@@ -561,7 +573,6 @@ class CLTrainer(Trainer):
 
             if not metric_to_check.startswith("eval_"):
                 metric_to_check = f"eval_{metric_to_check}"
-            # print('hello',metrics)
             metric_value = metrics[metric_to_check]
 
             operator = np.greater if self.args.greater_is_better else np.less

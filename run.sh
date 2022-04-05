@@ -5,7 +5,7 @@
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
 date='0405'
-epoch=6
+epoch=4
 bs=128
 pooler="cls"
 max_seq_length=64
@@ -29,7 +29,7 @@ python 2.train.py \
     --per_device_eval_batch_size $bs \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
-    --save_total_limit 2 \
+    --save_total_limit 5 \
     --evaluation_strategy steps \
     --greater_is_better False \
     --metric_for_best_model eval_loss \
