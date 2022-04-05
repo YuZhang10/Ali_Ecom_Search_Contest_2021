@@ -208,7 +208,7 @@ def cl_forward(cls,
     z2 = F.normalize(z2, p=2, dim=-1)
 
     # 检查维度，必须等于128
-    assert z1.shape[-1]==128, f"embedding dim {z1.shape[-1]}!=128!"
+    assert z1.shape[-1]==128, f"embedding dim {z1.shape[-1]} != 128!"
 
     cos_sim = cls.sim(z1.unsqueeze(1), z2.unsqueeze(0))
     # Hard negative

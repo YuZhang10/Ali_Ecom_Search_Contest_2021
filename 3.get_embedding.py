@@ -53,6 +53,7 @@ if __name__ == '__main__':
     for i in tqdm(range(0, len(query), batch_size)):
         batch_text = query[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)
+        assert temp_embedding.shape[-1]==128, f"embedding dim {temp_embedding.shape[-1]} != 128!"
         for j in range(len(temp_embedding)):
             writer_str = temp_embedding[j].tolist()
             writer_str = [format(s, '.8f') for s in writer_str]
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     for i in tqdm(range(0, len(corpus), batch_size)):
         batch_text = corpus[i:i + batch_size]
         temp_embedding = encode_fun(batch_text, model)
+        assert temp_embedding.shape[-1]==128, f"embedding dim {temp_embedding.shape[-1]} != 128!"
         for j in range(len(temp_embedding)):
             writer_str = temp_embedding[j].tolist()
             writer_str = [format(s, '.8f') for s in writer_str]
