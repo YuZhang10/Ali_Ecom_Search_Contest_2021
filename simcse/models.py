@@ -98,8 +98,8 @@ def cl_init(cls, config, pooler_dim=128):
     # 由于比赛要求，最终输出的维度必须是128维，所以设定pooler_dim=128
     cls.pooler_type = cls.model_args.pooler_type
     cls.pooler = Pooler(cls.model_args.pooler_type)
-    if cls.model_args.pooler_type == "cls":
-        cls.mlp = MLPLayer(config, pooler_dim)
+    # 由于必须要降维，所以不论pooler type如何，统一都加MLP
+    cls.mlp = MLPLayer(config, pooler_dim)
     cls.sim = Similarity(temp=cls.model_args.temp)
     cls.init_weights()
 

@@ -11,7 +11,8 @@ pooler="cls"
 max_seq_length=64
 comment='fp16'
 
-dir_path="./result/${comment}_${date}_ep${epoch}_bs${bs}_${pooler}_max_seq_length${max_seq_length}"
+model_name="${comment}_${date}_ep${epoch}_bs${bs}_${pooler}_max_seq_length${max_seq_length}"
+dir_path="./result/${model_name}"
 drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
 
 # 删除当前的文件夹
@@ -59,7 +60,7 @@ python 3.get_embedding.py \
 python data_check.py
 
 # 打包embedding。放入result文件夹
-tar zcvf foo.tar.gz query_embedding doc_embedding && mv foo.tar.gz $dir_path/foo.tar.gz
+tar zcvf foo.tar.gz query_embedding doc_embedding && mv foo.tar.gz $dir_path/${model_name}.tar.gz
 
 # 将文件移回云盘保存
 cp -r ./result/* $drive_result
