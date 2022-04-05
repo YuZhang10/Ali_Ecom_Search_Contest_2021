@@ -168,11 +168,9 @@ def cl_forward(cls,
     pooler_output = cls.pooler(attention_mask, outputs)
     pooler_output = pooler_output.view(
         (batch_size, num_sent, pooler_output.size(-1)))  # (bs, num_sent, hidden)
-
-    # If using "cls", we add an extra MLP layer
-    # (same as BERT's original implementation) over the representation.
-    if cls.pooler_type == "cls":
-        pooler_output = cls.mlp(pooler_output)
+    
+    # 比赛要求128维，所以必须加上MLP将768映射为128。
+    pooler_output = cls.mlp(pooler_output)
 
     # Separate representation
     z1, z2 = pooler_output[:, 0], pooler_output[:, 1]
@@ -208,6 +206,9 @@ def cl_forward(cls,
     # 归一化后余弦相似度==欧式距离
     z1 = F.normalize(z1, p=2, dim=-1)
     z2 = F.normalize(z2, p=2, dim=-1)
+
+    # 检查维度，必须等于128
+    assert z1.shape[-1]==128, f"embedding dim {z1.shape[-1]}!=128!"
 
     cos_sim = cls.sim(z1.unsqueeze(1), z2.unsqueeze(0))
     # Hard negative

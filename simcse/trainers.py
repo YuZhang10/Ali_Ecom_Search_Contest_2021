@@ -276,7 +276,7 @@ class CLTrainer(Trainer):
             model = model.half().to(self.args.device)
 
         batch_size = dataloader.batch_size
-
+        logger.info(f"")
         logger.info(f"***** Running {description} *****")
         if isinstance(dataloader.dataset, collections.abc.Sized):
             logger.info(f"  Num examples = {self.num_examples(dataloader)}")

@@ -4,13 +4,14 @@
 # If you want to train it with multiple GPU cards, see "run_sup_example.sh"
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
-date='0404'
-epoch=4
-bs=64
+date='0405'
+epoch=6
+bs=128
 pooler="cls"
 max_seq_length=64
+comment='fp16'
 
-dir_path="./result/${date};ep${epoch};bs${bs};${pooler};max_seq_length${max_seq_length};"
+dir_path="./result/${comment}_${date}_ep${epoch}_bs${bs}_${pooler}_max_seq_length${max_seq_length}"
 drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
 
 # 删除当前的文件夹
@@ -33,13 +34,14 @@ python 2.train.py \
     --metric_for_best_model eval_loss \
     --load_best_model_at_end \
     --eval_steps 100 \
-    --save_steps 100 \
+    --save_steps 1000 \
     --logging_steps 100 \
     --pooler_type $pooler \
     --overwrite_output_dir \
     --temp 0.05 \
     --do_train \
     --do_eval \
+    --fp16 \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本
