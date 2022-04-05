@@ -312,9 +312,8 @@ def sentemb_forward(
     )
 
     pooler_output = cls.pooler(attention_mask, outputs)
-    if cls.pooler_type == "cls" and not cls.model_args.mlp_only_train:
-        pooler_output = cls.mlp(pooler_output)
-        pooler_output = F.normalize(pooler_output, p=2, dim=-1)
+    pooler_output = cls.mlp(pooler_output)
+    pooler_output = F.normalize(pooler_output, p=2, dim=-1)
     if not return_dict:
         return (outputs[0], pooler_output) + outputs[2:]
 
