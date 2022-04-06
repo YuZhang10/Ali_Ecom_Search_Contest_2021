@@ -1,1 +1,0 @@
-tar zcvf foo.tar.gz  query_embedding doc_embedding
