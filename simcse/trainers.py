@@ -499,7 +499,6 @@ class CLTrainer(Trainer):
 
         return (loss, logits, labels)
 
-
     def _save_checkpoint(self, model, trial, metrics=None):
         """
         Compared to original implementation, we change the saving policy to
@@ -508,65 +507,8 @@ class CLTrainer(Trainer):
 
         # In all cases, including ddp/dp/deepspeed, self.model is always a reference to the model we
         # want to save except FullyShardedDDP.
-        # assert unwrap_model(model) is self.model, "internal model should be a reference to self.model"
-
-        # Save model checkpoint
-        checkpoint_folder = f"{PREFIX_CHECKPOINT_DIR}-{self.state.global_step}"
-
-        if self.hp_search_backend is not None and trial is not None:
-            if self.hp_search_backend == HPSearchBackend.OPTUNA:
-                run_id = trial.number
-            elif self.hp_search_backend == HPSearchBackend.RAY:
-                from ray import tune
-
-                run_id = tune.get_trial_id()
-            elif self.hp_search_backend == HPSearchBackend.SIGOPT:
-                run_id = trial.id
-            run_name = self.hp_name(trial) if self.hp_name is not None else f"run-{run_id}"
-            run_dir = os.path.join(self.args.output_dir, run_name)
-        else:
-            run_dir = self.args.output_dir
-            self.store_flos()
-
-        output_dir = os.path.join(run_dir, checkpoint_folder)
-        self.save_model(output_dir)
-        if self.deepspeed:
-            # under zero3 model file itself doesn't get saved since it's bogus! Unless deepspeed
-            # config `stage3_gather_fp16_weights_on_model_save` is True
-            self.deepspeed.save_checkpoint(output_dir)
-
-        # Save optimizer and scheduler
-        if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-            self.optimizer.consolidate_state_dict()
-
-        if is_torch_tpu_available():
-            xm.rendezvous("saving_optimizer_states")
-            xm.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                xm.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-                reissue_pt_warnings(caught_warnings)
-        elif is_sagemaker_mp_enabled():
-            if smp.dp_rank() == 0:
-                # Consolidate the state dict on all processed of dp_rank 0
-                opt_state_dict = self.optimizer.state_dict()
-                # Save it and the scheduler on the main process
-                if self.args.should_save:
-                    torch.save(opt_state_dict, os.path.join(output_dir, OPTIMIZER_NAME))
-                    with warnings.catch_warnings(record=True) as caught_warnings:
-                        torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-                    reissue_pt_warnings(caught_warnings)
-                    if self.use_amp:
-                        torch.save(self.scaler.state_dict(), os.path.join(output_dir, SCALER_NAME))
-        elif self.args.should_save and not self.deepspeed:
-            # deepspeed.save_checkpoint above saves model/optim/sched
-            torch.save(self.optimizer.state_dict(), os.path.join(output_dir, OPTIMIZER_NAME))
-            with warnings.catch_warnings(record=True) as caught_warnings:
-                torch.save(self.lr_scheduler.state_dict(), os.path.join(output_dir, SCHEDULER_NAME))
-            reissue_pt_warnings(caught_warnings)
-            if self.use_amp:
-                torch.save(self.scaler.state_dict(), os.path.join(output_dir, SCALER_NAME))
-
-        # PuMiao
+        assert unwrap_model(model) is self.model, "internal model should be a reference to self.model"
+        
         # Determine the new best metric / best model checkpoint
         if metrics is not None and self.args.metric_for_best_model is not None:
             metric_to_check = self.args.metric_for_best_model
@@ -633,7 +575,7 @@ class CLTrainer(Trainer):
                 self.deepspeed.save_checkpoint(output_dir)
 
             # Save optimizer and scheduler
-            if self.sharded_dpp:
+            if self.sharded_ddp:
                 self.optimizer.consolidate_state_dict()
 
             if is_torch_tpu_available():
