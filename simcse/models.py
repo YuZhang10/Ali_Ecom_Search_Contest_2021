@@ -439,21 +439,15 @@ class RobertaForCL(RobertaPreTrainedModel):
                               mlm_labels=mlm_labels,
                               )
 
-# 对抗学习。默认不启用。
-
-
+# 对抗学习。
 class FGM:
     def __init__(self, model):
         self.model = model
         self.backup = {}
-        for name, param in self.model.named_parameters():
-            print(name)
 
     def attack(self, epsilon=1., emb_name='word_embeddings'):
         # emb_name这个参数要换成你模型中embedding的参数名
-        # 例如，self.emb = nn.Embedding(5000, 100)
         for name, param in self.model.named_parameters():
-
             if param.requires_grad and emb_name in name:
                 self.backup[name] = param.data.clone()
                 norm = torch.norm(param.grad)  # 默认为2范数

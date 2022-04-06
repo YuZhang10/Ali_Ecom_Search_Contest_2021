@@ -19,7 +19,7 @@ drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
 rm -rf $dir_path
 
 # sup train
-python my_train.py \
+python main.py \
     --model_name_or_path $pretrain \
     --train_file "./data/X_train.csv" \
     --validation_file "./data/X_val.csv" \
@@ -27,6 +27,7 @@ python my_train.py \
     --num_train_epochs $epoch \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
+    --optim adamw_apex_fused \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
     --save_total_limit 5 \
@@ -42,6 +43,8 @@ python my_train.py \
     --temp 0.05 \
     --do_train \
     --do_eval \
+    --fp16 \
+    --do_fgm \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本

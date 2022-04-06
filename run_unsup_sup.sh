@@ -19,19 +19,23 @@ drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
 rm -rf $dir_path
 
 # 无监督预训练
-python my_train.py \
+python main.py \
     --model_name_or_path $pretrain \
     --train_file  "./data/full_corpus_querys.csv"\
     --output_dir $dir_path/unsup \
     --num_train_epochs 1 \
     --per_device_train_batch_size $bs \
+    --optim adamw_apex_fused \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
     --pooler_type $pooler \
+    --save_total_limit 1 \
+    --save_steps 1000 \
     --overwrite_output_dir \
     --temp 0.05 \
     --do_train \
     --fp16 \
+    --do_fgm \
 && { echo "unsup train finished!"; } || { echo 'unsup train failed'; exit 1; }
 
 # 清空显存
@@ -46,9 +50,11 @@ python my_train.py \
     --num_train_epochs $epoch \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
+    --ignore_data_skip \
+    --optim adamw_apex_fused \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
-    --save_total_limit 5 \
+    --save_total_limit 3 \
     --evaluation_strategy steps \
     --greater_is_better False \
     --metric_for_best_model eval_loss \
@@ -61,6 +67,8 @@ python my_train.py \
     --temp 0.05 \
     --do_train \
     --do_eval \
+    --fp16 \
+    --do_fgm \
 && { echo "sup train finished!"; } || { echo 'sup train failed'; exit 1; }
 
 # 保留原始脚本
