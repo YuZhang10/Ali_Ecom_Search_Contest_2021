@@ -18,11 +18,11 @@ drive_result="/content/drive/MyDrive/competition/simcse-mini/result"
 # 删除当前的文件夹
 rm -rf $dir_path
 
-# unsup train
+# 无监督预训练
 python my_train.py \
     --model_name_or_path $pretrain \
     --train_file  "./data/full_corpus_querys.csv"\
-    --output_dir $dir_path \
+    --output_dir $dir_path/unsup \
     --num_train_epochs 1 \
     --per_device_train_batch_size $bs \
     --learning_rate 3e-5 \
@@ -34,12 +34,15 @@ python my_train.py \
     --fp16 \
 && { echo "unsup train finished!"; } || { echo 'unsup train failed'; exit 1; }
 
-# 训练模型
+# 清空显存
+python clear_gpu_memory.py
+
+# 有监督训练
 python my_train.py \
-    --model_name_or_path $pretrain \
+    --model_name_or_path $dir_path/unsup \
     --train_file "./data/X_train.csv" \
     --validation_file "./data/X_val.csv" \
-    --output_dir $dir_path \
+    --output_dir $dir_path/sup \
     --num_train_epochs $epoch \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
@@ -51,7 +54,7 @@ python my_train.py \
     --metric_for_best_model eval_loss \
     --load_best_model_at_end \
     --eval_steps 100 \
-    --save_steps 1000 \
+    --save_steps 500 \
     --logging_steps 100 \
     --pooler_type $pooler \
     --overwrite_output_dir \
@@ -61,11 +64,11 @@ python my_train.py \
 && { echo "sup train finished!"; } || { echo 'sup train failed'; exit 1; }
 
 # 保留原始脚本
-cp ./run.sh $dir_path/run_backup.sh
+cp ./run_unsup_sup.sh $dir_path/run_backup.sh
 
 # 提取embedding
 python get_embedding.py \
-        --dir_path $dir_path \
+        --dir_path $dir_path/sup \
         --pooler_type $pooler \
         --temp 0.05 \
         --batchsize 1024 \

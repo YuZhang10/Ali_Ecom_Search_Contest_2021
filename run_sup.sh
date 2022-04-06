@@ -5,7 +5,7 @@
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
 date=''
-epoch=6
+epoch=4
 bs=128
 pooler="cls"
 max_seq_length=64
@@ -35,7 +35,7 @@ python my_train.py \
     --metric_for_best_model eval_loss \
     --load_best_model_at_end \
     --eval_steps 100 \
-    --save_steps 1000 \
+    --save_steps 500 \
     --logging_steps 100 \
     --pooler_type $pooler \
     --overwrite_output_dir \
@@ -45,7 +45,7 @@ python my_train.py \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本
-cp ./run.sh $dir_path/run_backup.sh
+cp ./run_sup.sh $dir_path/run_backup.sh
 
 # 提取embedding
 python get_embedding.py \
