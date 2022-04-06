@@ -364,7 +364,7 @@ class CLTrainer(Trainer):
         metrics = self.compute_eval_metrics(model=model,query=all_z1, doc=all_z2)
         logger.info(f"")
         logger.info(f"***** {description} result*****")
-        logger.info(f" eval AUC = {metrics['eval_auc']}")
+        logger.info(f" eval ACC = {metrics['eval_acc']}")
         logger.info(f" eval loss = {metrics['eval_loss']}")
         logger.info(f" eval MRR = {metrics['eval_MRR']}")
 
