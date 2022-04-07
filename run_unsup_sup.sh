@@ -35,7 +35,6 @@ python main.py \
     --temp 0.05 \
     --do_train \
     --fp16 \
-    --do_fgm \
 && { echo "unsup train finished!"; } || { echo 'unsup train failed'; exit 1; }
 
 # 清空显存
@@ -69,6 +68,7 @@ python main.py \
     --do_eval \
     --fp16 \
     --do_fgm \
+    --do_ema \
 && { echo "sup train finished!"; } || { echo 'sup train failed'; exit 1; }
 
 # 保留原始脚本

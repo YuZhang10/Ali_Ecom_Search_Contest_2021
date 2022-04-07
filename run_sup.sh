@@ -45,6 +45,7 @@ python main.py \
     --do_eval \
     --fp16 \
     --do_fgm \
+    --do_ema \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本

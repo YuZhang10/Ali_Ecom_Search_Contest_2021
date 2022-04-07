@@ -219,6 +219,10 @@ class OurTrainingArguments(TrainingArguments):
         default=False,
         metadata={"help": "Evaluate transfer task dev sets (in validation)."}
     )
+    do_ema: bool = field(
+        default=False,
+        metadata={"help": "whether to performer EMA Exponential Moving Average"}
+    )
     ddp_find_unused_parameters: Optional[bool] = field(
         default=False,
         metadata={
