@@ -21,7 +21,7 @@ rm -rf $dir_path
 # 无监督预训练
 python main.py \
     --model_name_or_path $pretrain \
-    --train_file  "./data/full_corpus_querys.csv"\
+    --train_file  "./data/corpus.csv"\
     --output_dir $dir_path/unsup \
     --num_train_epochs 1 \
     --per_device_train_batch_size $bs \
