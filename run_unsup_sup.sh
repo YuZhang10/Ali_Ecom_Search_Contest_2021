@@ -42,7 +42,7 @@ python main.py \
 python clear_gpu_memory.py
 
 # 有监督训练
-python my_train.py \
+python main.py \
     --model_name_or_path $dir_path/unsup \
     --train_file "./data/X_train.csv" \
     --validation_file "./data/X_val.csv" \
