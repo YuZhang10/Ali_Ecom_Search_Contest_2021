@@ -23,14 +23,16 @@ if __name__ == '__main__':
     parser.add_argument('--pooler_type', type=str, default="cls")
     parser.add_argument('--temp', type=float, default=0.05)
     parser.add_argument('--mlp_only_train', action='store_true', default=False)
+    parser.add_argument('--do_ema', action='store_true', default=False)
     parser.add_argument('--batchsize', type=int, default=128)
     args = parser.parse_args()
     print(args)
-    model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train"])
+    model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train","do_ema"])
     dummy_args = model_args(args.do_mlm,
                             args.pooler_type, 
                             args.temp,
-                            args.mlp_only_train)
+                            args.mlp_only_train,
+                            args.do_ema)
     print(dummy_args)
     model = BertForCL.from_pretrained(args.dir_path,
                                       model_args=dummy_args)

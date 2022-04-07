@@ -1115,7 +1115,11 @@ class CLTrainer(Trainer):
 
                 self.store_flos()
 
+            # ema平滑存储平滑后的模型
+            self.ema.apply_shadow()
             self.save_model(output_dir)
+            self.ema.restore()
+
             if self.deepspeed:
                 self.deepspeed.save_checkpoint(output_dir)
 
