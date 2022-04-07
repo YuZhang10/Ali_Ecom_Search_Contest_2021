@@ -47,7 +47,7 @@ python main.py \
     --train_file "./data/X_train.csv" \
     --validation_file "./data/X_val.csv" \
     --output_dir $dir_path/sup \
-    --num_train_epochs $epoch \
+    --num_train_epochs $((10+$epoch)) \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
     --ignore_data_skip \
