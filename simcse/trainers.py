@@ -172,6 +172,13 @@ if TYPE_CHECKING:
 
 logger = logging.get_logger(__name__)
 
+# Name of the files used for checkpointing
+TRAINING_ARGS_NAME = "training_args.bin"
+TRAINER_STATE_NAME = "trainer_state.json"
+OPTIMIZER_NAME = "optimizer.pt"
+SCHEDULER_NAME = "scheduler.pt"
+SCALER_NAME = "scaler.pt"
+
 
 class CLTrainer(Trainer):
     def __init__(
@@ -576,7 +583,8 @@ class CLTrainer(Trainer):
                     if optimizer_was_run and not self.deepspeed:
                         self.lr_scheduler.step()
                     
-                    self.ema.update() # EMA step
+                    if self.args.do_ema:
+                        self.ema.update() # EMA step
                     model.zero_grad()
                     self.state.global_step += 1
                     self.state.epoch = epoch + (step + 1) / steps_in_epoch
@@ -747,7 +755,8 @@ class CLTrainer(Trainer):
             metric_key_prefix: str = "eval",
             eval_senteval_transfer: bool = False,
     ) -> Dict[str, float]:
-        self.ema.apply_shadow()
+        if self.args.do_ema:
+            self.ema.apply_shadow()
         self._memory_tracker.start()
 
         eval_dataloader = self.get_eval_dataloader(eval_dataset)
@@ -778,7 +787,8 @@ class CLTrainer(Trainer):
 
         self._memory_tracker.stop_and_update_metrics(output.metrics)
 
-        self.ema.restore()
+        if self.args.do_ema:
+            self.ema.restore()
         return output.metrics
 
     def evaluation_loop(
@@ -1116,9 +1126,11 @@ class CLTrainer(Trainer):
                 self.store_flos()
 
             # ema平滑存储平滑后的模型
-            self.ema.apply_shadow()
+            if self.args.do_ema:
+                self.ema.apply_shadow()
             self.save_model(output_dir)
-            self.ema.restore()
+            if self.args.do_ema:
+                self.ema.restore()
 
             if self.deepspeed:
                 self.deepspeed.save_checkpoint(output_dir)
