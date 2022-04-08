@@ -20,10 +20,10 @@ rm -rf $dir_path
 
 # fake监督训练
 python main.py \
-    --model_name_or_path $dir_path/fakesup \
+    --model_name_or_path $pretrain \
     --train_file "./data/fake_train.csv" \
     --validation_file "./data/X_val.csv" \
-    --output_dir $dir_path/sup \
+    --output_dir $dir_path/fakesup \
     --num_train_epochs 1 \
     --per_device_train_batch_size $bs \
     --per_device_eval_batch_size $bs \
@@ -45,7 +45,6 @@ python main.py \
     --do_train \
     --do_eval \
     --fp16 \
-    --do_fgm \
     --label_smoothing_factor 0.2 \
 && { echo "fakesup train finished!"; } || { echo 'fakesup train failed'; exit 1; }
 
