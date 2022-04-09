@@ -700,14 +700,11 @@ class CLTrainer(Trainer):
         inputs = self._prepare_inputs(inputs)
 
         if is_sagemaker_mp_enabled():
-            scaler = self.scaler if self.use_amp else None
+            scaler = self.scaler if self.do_grad_scaling else None
             loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps, scaler=scaler)
             return loss_mb.reduce_mean().detach().to(self.args.device)
 
-        if self.use_amp:
-            with autocast():
-                loss = self.compute_loss(model, inputs)
-        else:
+        with self.autocast_smart_context_manager():
             loss = self.compute_loss(model, inputs)
 
         if self.args.n_gpu > 1:
@@ -717,7 +714,7 @@ class CLTrainer(Trainer):
             # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
             loss = loss / self.args.gradient_accumulation_steps
 
-        if self.use_amp:
+        if self.do_grad_scaling:
             self.scaler.scale(loss).backward()
         elif self.use_apex:
             with amp.scale_loss(loss, self.optimizer) as scaled_loss:
@@ -731,11 +728,8 @@ class CLTrainer(Trainer):
         if self.args.do_fgm:
             name = 'word_embeddings.weight'
             self.fgm.attack(emb_name=name)
-            if self.use_amp:
-                with autocast():
-                    loss_adv = self.compute_loss(model, inputs)
-            else:
-                loss_adv = self.compute_loss(model, inputs)
+            with self.autocast_smart_context_manager():
+                loss = self.compute_loss(model, inputs)
 
             if self.args.n_gpu > 1:
                 loss_adv = loss_adv.mean()  # mean() to average on multi-gpu parallel training
@@ -743,9 +737,17 @@ class CLTrainer(Trainer):
             if self.args.gradient_accumulation_steps > 1 and not self.deepspeed:
                 # deepspeed handles loss scaling by gradient_accumulation_steps in its `backward`
                 loss_adv = loss_adv / self.args.gradient_accumulation_steps
+            if self.do_grad_scaling:
+                self.scaler.scale(loss_adv).backward()
+            elif self.use_apex:
+                with amp.scale_loss(loss_adv, self.optimizer) as scaled_loss_adv:
+                    scaled_loss_adv.backward()
+            elif self.deepspeed:
+                # loss gets scaled under gradient_accumulation_steps in deepspeed
+                loss_adv = self.deepspeed.backward(loss_adv)
             loss_adv.backward()
             self.fgm.restore(name)
-
+        
         return loss.detach()
 
     def evaluate(

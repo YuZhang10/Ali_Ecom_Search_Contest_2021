@@ -5,11 +5,11 @@
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
 date='0408'
-epoch=4
+epoch=6
 bs=128
 pooler="cls"
 max_seq_length=64
-comment='fakesup_fgm_smooth0.2'
+comment='fakesup_fgm_smooth0.5'
 
 model_name="${comment}_${date}_ep${epoch}_bs${bs}_${pooler}_max_seq_length${max_seq_length}"
 dir_path="./result/${model_name}"
@@ -37,7 +37,7 @@ python main.py \
     --metric_for_best_model eval_loss \
     --load_best_model_at_end \
     --eval_steps 1000 \
-    --save_steps 5000 \
+    --save_steps 1000 \
     --logging_steps 1000 \
     --pooler_type $pooler \
     --overwrite_output_dir \
@@ -45,7 +45,7 @@ python main.py \
     --do_train \
     --do_eval \
     --fp16 \
-    --label_smoothing_factor 0.2 \
+    --label_smoothing_factor 0.5 \
 && { echo "fakesup train finished!"; } || { echo 'fakesup train failed'; exit 1; }
 
 # 临时将文件移回云盘保存
