@@ -4,12 +4,12 @@
 # If you want to train it with multiple GPU cards, see "run_sup_example.sh"
 # about how to use PyTorch's distributed data parallel.
 pretrain="cyclone/simcse-chinese-roberta-wwm-ext"
-date='0408'
+date=''
 epoch=6
 bs=128
 pooler="cls"
 max_seq_length=64
-comment='fakesup_fgm_smooth0.5'
+comment=''
 
 model_name="${comment}_${date}_ep${epoch}_bs${bs}_${pooler}_max_seq_length${max_seq_length}"
 dir_path="./result/${model_name}"
