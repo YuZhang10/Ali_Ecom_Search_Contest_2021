@@ -729,7 +729,7 @@ class CLTrainer(Trainer):
             name = 'word_embeddings.weight'
             self.fgm.attack(emb_name=name)
             with self.autocast_smart_context_manager():
-                loss = self.compute_loss(model, inputs)
+                loss_adv = self.compute_loss(model, inputs)
 
             if self.args.n_gpu > 1:
                 loss_adv = loss_adv.mean()  # mean() to average on multi-gpu parallel training
@@ -745,7 +745,8 @@ class CLTrainer(Trainer):
             elif self.deepspeed:
                 # loss gets scaled under gradient_accumulation_steps in deepspeed
                 loss_adv = self.deepspeed.backward(loss_adv)
-            loss_adv.backward()
+            else:
+                loss_adv.backward()
             self.fgm.restore(name)
         
         return loss.detach()
