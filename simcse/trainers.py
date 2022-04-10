@@ -1086,7 +1086,13 @@ class CLTrainer(Trainer):
                 self.state.best_model_checkpoint = output_dir
 
                 # Only save model when it is the best one
+                # ema平滑存储平滑后的模型
+                if self.args.do_ema:
+                    self.ema.apply_shadow()
                 self.save_model(output_dir)
+                if self.args.do_ema:
+                    self.ema.restore()
+
                 if self.deepspeed:
                     self.deepspeed.save_checkpoint(output_dir)
 
