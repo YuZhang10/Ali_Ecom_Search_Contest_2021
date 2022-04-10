@@ -5,6 +5,7 @@ import argparse
 import os
 from tkinter.font import BOLD
 from numpy import bool_
+import pandas as pd
 
 import torch
 from tqdm import tqdm
@@ -37,8 +38,8 @@ if __name__ == '__main__':
     model = BertForCL.from_pretrained(args.dir_path,
                                       model_args=dummy_args)
     model.to(device)
-    corpus = [line[1] for line in csv.reader(open("./data/corpus.tsv"), delimiter='\t')]
-    query = [line[1] for line in csv.reader(open("./data/dev.query.txt"), delimiter='\t')]
+    corpus = pd.read_csv("./data/simple_corpus.csv")['gname'].values.tolist()
+    query = pd.read_csv("./data/simple_test_query.csv")['query'].values.tolist()
     tokenizer = AutoTokenizer.from_pretrained(args.dir_path)
 
     def encode_fun(texts, model):

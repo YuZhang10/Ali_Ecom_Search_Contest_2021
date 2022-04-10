@@ -21,8 +21,8 @@ rm -rf $dir_path
 # sup train
 python main.py \
     --model_name_or_path $pretrain \
-    --train_file "./data/X_train.csv" \
-    --validation_file "./data/X_val.csv" \
+    --train_file "./data/simple_X_train.csv" \
+    --validation_file "./data/simple_X_val.csv" \
     --output_dir $dir_path \
     --num_train_epochs $epoch \
     --per_device_train_batch_size $bs \
