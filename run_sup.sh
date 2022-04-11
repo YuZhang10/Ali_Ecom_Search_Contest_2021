@@ -46,6 +46,8 @@ python main.py \
     --fp16 \
     --do_fgm \
     --do_ema \
+    --lr_scheduler_type cosine \
+    --label_smoothing_factor 0.1 \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
 # 保留原始脚本
@@ -57,6 +59,7 @@ python get_embedding.py \
         --pooler_type $pooler \
         --temp 0.05 \
         --batchsize 1024 \
+        --max_seq_length $max_seq_length \
 && { echo "get embedding finished!"; } || { echo "get embedding failed"; exit 1; }
 
 # 检查embedding文件

@@ -230,9 +230,6 @@ class OurTrainingArguments(TrainingArguments):
             "`DistributedDataParallel`."
         },
     )
-    greater_is_better: Optional[bool] = field(
-        default=True, metadata={"help": "Whether the `metric_for_best_model` should be maximized or not."}
-    )
     resume_from_checkpoint: Optional[str] = field(
         default=None,
         metadata={"help": "The path to a folder with a valid checkpoint for your model."},

@@ -25,7 +25,8 @@ if __name__ == '__main__':
     parser.add_argument('--temp', type=float, default=0.05)
     parser.add_argument('--mlp_only_train', action='store_true', default=False)
     parser.add_argument('--do_ema', action='store_true', default=False)
-    parser.add_argument('--batchsize', type=int, default=128)
+    parser.add_argument('--batchsize', type=int, default=1024)
+    parser.add_argument('--max_length', type=int, default=64)
     args = parser.parse_args()
     print(args)
     model_args = namedtuple("model_args",["do_mlm","pooler_type","temp","mlp_only_train","do_ema"])
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     tokenizer = AutoTokenizer.from_pretrained(args.dir_path)
 
     def encode_fun(texts, model):
-        inputs = tokenizer.batch_encode_plus(texts, padding=True, truncation=True, return_tensors="pt", max_length=64)
+        inputs = tokenizer.batch_encode_plus(texts, padding=True, truncation=True, return_tensors="pt", max_length=args.max_length)
         inputs.to(device)
         with torch.no_grad():
             embeddings = model(**inputs, output_hidden_states=True, return_dict=True, sent_emb=True).pooler_output

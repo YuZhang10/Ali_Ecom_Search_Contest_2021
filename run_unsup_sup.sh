@@ -29,11 +29,15 @@ python main.py \
     --learning_rate 3e-5 \
     --max_seq_length $max_seq_length \
     --pooler_type $pooler \
-    --save_steps 1000 \
+    --save_steps 5000 \
     --overwrite_output_dir \
     --temp 0.05 \
     --do_train \
     --fp16 \
+    --do_fgm \
+    --do_ema \
+    --lr_scheduler_type cosine \
+    --label_smoothing_factor 0.1 \
 && { echo "unsup train finished!"; } || { echo 'unsup train failed'; exit 1; }
 
 # 清空显存
@@ -68,6 +72,8 @@ python main.py \
     --fp16 \
     --do_fgm \
     --do_ema \
+    --lr_scheduler_type cosine \
+    --label_smoothing_factor 0.1 \
 && { echo "sup train finished!"; } || { echo 'sup train failed'; exit 1; }
 
 # 保留原始脚本
@@ -79,6 +85,7 @@ python get_embedding.py \
         --pooler_type $pooler \
         --temp 0.05 \
         --batchsize 1024 \
+        --max_seq_length $max_seq_length \
 && { echo "get embedding finished!"; } || { echo "get embedding failed"; exit 1; }
 
 # 检查embedding文件

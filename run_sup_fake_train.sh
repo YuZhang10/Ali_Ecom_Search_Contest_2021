@@ -45,7 +45,7 @@ python main.py \
     --do_train \
     --do_eval \
     --fp16 \
-    --label_smoothing_factor 0.5 \
+    --label_smoothing_factor 0.1 \
 && { echo "fakesup train finished!"; } || { echo 'fakesup train failed'; exit 1; }
 
 # 临时将文件移回云盘保存
