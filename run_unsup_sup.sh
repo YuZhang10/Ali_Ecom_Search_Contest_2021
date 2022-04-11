@@ -36,7 +36,7 @@ python main.py \
     --fp16 \
     --do_fgm \
     --do_ema \
-    --lr_scheduler_type cosine \
+    --lr_scheduler_type cosine_with_restarts \
     --label_smoothing_factor 0.1 \
 && { echo "unsup train finished!"; } || { echo 'unsup train failed'; exit 1; }
 
@@ -72,7 +72,7 @@ python main.py \
     --fp16 \
     --do_fgm \
     --do_ema \
-    --lr_scheduler_type cosine \
+    --lr_scheduler_type cosine_with_restarts \
     --label_smoothing_factor 0.1 \
 && { echo "sup train finished!"; } || { echo 'sup train failed'; exit 1; }
 

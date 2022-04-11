@@ -46,7 +46,7 @@ python main.py \
     --fp16 \
     --do_fgm \
     --do_ema \
-    --lr_scheduler_type cosine \
+    --lr_scheduler_type cosine_with_restarts \
     --label_smoothing_factor 0.1 \
 && { echo "train finished!"; } || { echo 'train failed'; exit 1; }
 
