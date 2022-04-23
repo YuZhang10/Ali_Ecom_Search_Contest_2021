@@ -1,4 +1,3 @@
-from ast import arg
 import csv
 import sys
 import argparse
