@@ -5,7 +5,7 @@ from numpy import ndarray
 import torch
 from torch import Tensor, device
 import transformers
-from models import BertForCL, RobertaForCL
+from .models import BertForCL, RobertaForCL
 from transformers import AutoModel, AutoTokenizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
