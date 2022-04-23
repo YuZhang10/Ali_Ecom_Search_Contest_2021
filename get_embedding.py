@@ -10,7 +10,7 @@ import torch
 from tqdm import tqdm
 
 sys.path.append("..")
-from simcse.models import BertForCL, RobertaForCL
+from my_simcse.models import BertForCL, RobertaForCL
 from transformers import AutoTokenizer
 from collections import namedtuple
 device = "cuda:0"
